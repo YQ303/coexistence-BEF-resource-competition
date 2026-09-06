@@ -1,0 +1,294 @@
+---
+title: "Reproducibility report: coexistence and biodiversity effects under resource competition"
+author: "Qi Yang"
+date: today
+bibliography: references.bib
+csl: apa.csl
+---
+
+## Purpose
+
+This repository contains the numerical simulations and figure-generation code for the manuscript *Unifying species coexistence and biodiversity–ecosystem functioning: a geometric resource-use framework*.
+
+```{r}
+#| label: load-targets
+#| include: false
+
+simulation_summary <- targets::tar_read(simulation_summary)
+CR_model <- targets::tar_read(model_function)
+
+parameter_table_bef_trans <- targets::tar_read(parameter_table_bef_trans)
+parameter_table_bef_notrans <- targets::tar_read(parameter_table_bef_notrans)
+parameter_table_bef_nbe_upper <- targets::tar_read(parameter_table_bef_nbe_upper)
+parameter_table_resource <- targets::tar_read(parameter_table_resource)
+parameter_table_nonlimiting <- targets::tar_read(parameter_table_nonlimiting)
+parameter_table_limiting <- targets::tar_read(parameter_table_limiting)
+
+plot_trans <- targets::tar_read(plot_bef_trans)
+plot_nbe1 <- targets::tar_read(plot_bef_nbe_trans)
+plot_notrans <- targets::tar_read(plot_bef_notrans)
+plot_nbe2 <- targets::tar_read(plot_bef_nbe_lower)
+
+figure_bef_file <- targets::tar_read(figure_bef_file)
+figure_bef_nbe_upper_file <- targets::tar_read(figure_bef_nbe_upper_file)
+figure_resource_main_file <- targets::tar_read(figure_resource_main_file)
+figure_resource_supplement_file <- targets::tar_read(figure_resource_supplement_file)
+figure_nonlimiting_main_file <- targets::tar_read(figure_nonlimiting_main_file)
+figure_nonlimiting_supplement_file <- targets::tar_read(figure_nonlimiting_supplement_file)
+figure_limiting_main_file <- targets::tar_read(figure_limiting_main_file)
+figure_limiting_supplement_file <- targets::tar_read(figure_limiting_supplement_file)
+
+display_parameter_table <- function(data) {
+  display <- data
+  display$Scenario[duplicated(display$Scenario)] <- ""
+  knitr::kable(
+    display,
+    align = c("l", "l", "l"),
+    escape = FALSE
+  )
+}
+```
+
+## Model
+
+### Model structure
+
+The analysis is built on a two-species, two-resource consumer-resource model. For species $i$ and $j$, competing for two essential resources $k$ and $l$, biomass and resource dynamics are described by the following system of ordinary differential equations:
+
+$$
+\frac{1}{B_i}\frac{dB_i}{dt}=f_i(R_k,R_l)-\mu_i
+\qquad\text{(1a)}
+$$
+
+$$
+\frac{1}{B_j}\frac{dB_j}{dt}=f_j(R_k,R_l)-\mu_j
+\qquad\text{(1b)}
+$$
+
+$$
+\frac{dR_k}{dt}=D_k(R_{k0}-R_k)-
+\left[f_i(R_k,R_l)q_{ik}B_i+f_j(R_k,R_l)q_{jk}B_j\right]
+\qquad\text{(1c)}
+$$
+
+$$
+\frac{dR_l}{dt}=D_l(R_{l0}-R_l)-
+\left[f_i(R_k,R_l)q_{il}B_i+f_j(R_k,R_l)q_{jl}B_j\right]
+\qquad\text{(1d)}
+$$
+
+Here, $B_s$ is species biomass, $\mu_s$ is the mortality rate, $R_{m0}$ is the resource supply concentration, $D_m$ is the dilution rate, $q_{sm}$ is the resource-consumption coefficient,with $m\in\{k,l\}$. Biomass growth is co-limited by two essential resources following Liebig's law of the minimum:
+
+$$
+f_s(R_k,R_l)=\min\left\{
+\frac{g_s(R_k)}{q_{sk}},
+\frac{g_s(R_l)}{q_{sl}}
+\right\}
+\qquad\text{(2)}
+$$
+
+Resource-dependent uptake follows the Monod function, $g_s(R_m)=R_m/(K_{sm}+R_m)$, $m\in\{k,l\}$. $K_{sm}$ is the half-saturation constant.
+
+### Simulation code
+
+All inputs are generated deterministically from the parameter definitions in `R/functions.R`; this analysis does not require an external empirical dataset.
+
+```{r}
+CR_model
+```
+
+## Results
+
+### 4.1 When does coexistence translate into transgressive overyielding or positive biodiversity effects?
+
+We simulated the dynamics of two example communities with different species compositions (see Appendix S2 for details). For the first community, transgressive overyielding and positive net biodiversity effects are guaranteed within the coexistence region. Model parameters for this community are:
+
+```{r}
+#| label: tbl-parameters-community-one
+#| tbl-cap: "Parameters for the community in which transgressive overyielding and positive NBE are guaranteed."
+
+display_parameter_table(parameter_table_bef_trans)
+```
+
+Simulation results for the first community are shown in Figure 2a–b.
+
+```{r}
+#| label: fig2ab
+#| fig-cap: "Resource-supply regions permitting transgressive overyielding and positive net biodiversity effects (Figure 2a–b)."
+#| fig-width: 6
+#| fig-height: 2.5
+
+ggpubr::ggarrange(plot_trans,plot_nbe1,labels = paste0("(", letters[1:2], ")"),
+label.x = c( 0.01, 0.01),
+          label.y = c( 1., 1),
+          hjust = 0.1, vjust = 1,
+          font.label = list(size = 16, face = "bold"))
+```
+
+For the second community, transgressive overyielding does not occur, but positive net biodiversity effects remain possible within a subset of the coexistence region. Model parameters for this community are:
+
+```{r}
+#| label: tbl-parameters-community-two
+#| tbl-cap: "Parameters for the community in which transgressive overyielding is absent."
+
+display_parameter_table(parameter_table_bef_notrans)
+```
+
+Simulation results for the second community are shown in Figure 2c–d. In this case, species $j$ has the higher monoculture yield, and positive NBE requires $\tan(\theta_{ij})>\tan(\theta_{ij}^{*})$. 
+
+```{r}
+#| label: fig2cd
+#| fig-cap: "Resource-supply regions without transgressive overyielding but with possible positive net biodiversity effects (Figure 2c–d)."
+#| fig-width: 6
+#| fig-height: 2.5
+
+ggpubr::ggarrange(plot_notrans,plot_nbe2,labels = paste0("(", letters[3:4], ")"),
+label.x = c( 0.01, 0.01),
+          label.y = c( 1., 1),
+          hjust = 0.1, vjust = 1,
+          font.label = list(size = 16, face = "bold"))
+```
+
+The relative position of the positive-NBE region is parameter dependent. Figure S2 shows another case in which species $j$ has the higher monoculture yield and positive NBE requires $\tan(\theta_{ij})>\tan(\theta_{ij}^{*})$.Model parameters for this community are:
+
+```{r}
+#| label: tbl-parameters-community-one-upper
+#| tbl-cap: "Parameters for the community in which transgressive overyielding and positive NBE are guaranteed."
+
+display_parameter_table(parameter_table_bef_nbe_upper)
+```
+Simulation resultsare shown in Figure S2.
+
+```{r}
+#| label: figS2
+#| fig-cap: "Resource-supply region permitting positive net biodiversity effects (NBE) when species j has the higher monoculture yield (Figure S2)."
+#| out-width: "55%"
+#| fig-align: center
+
+knitr::include_graphics(figure_bef_nbe_upper_file)
+```
+
+### 4.2 How do niche or fitness differences link to complementarity and selection effects?
+
+To investigate the emergent relationships between niche or fitness differences and complementarity and selection effects, we varied system resource supply and species’ resource consumption parameters and quantified the resulting changes and covariation in ND, FD, CE, and SE, using analytical derivations and numerical simulations (see Appendix S3 for details).
+
+#### Variation in system resource supply
+
+Simulation parameters for the variation in system resource supply are shown below.
+
+```{r}
+#| label: tbl-parameters-resource-supply
+#| tbl-cap: "Parameters for the resource-supply-gradient simulations."
+
+display_parameter_table(parameter_table_resource)
+```
+
+Simulation results for variation in system resource supply are shown in Figure 3. In this case, the net biodiversity effect (NBE) decreases with the supply of resource $l$, consistent with the analytical result that $T_{ij}<1$ (see Appendix S3 for details).
+
+```{r}
+#| label: fig3
+#| fig-cap: "Effects of resource supply on niche differences, fitness differences, and biodiversity effects (Figure 3)."
+#| out-width: "100%"
+
+knitr::include_graphics(figure_resource_main_file)
+
+```
+
+A contrasting case in which $T_{ij}>1$ and NBE increases with the supply of resource $l$ is shown in Figure S3.
+
+{{< pagebreak >}}
+
+```{r}
+#| label: figS3
+#| fig-cap: "Effects of resource supply on niche difference, fitness difference, and biodiversity effects for a parameter set in which NBE increases with the supply of resource l (Figure S3)."
+#| out-width: "100%"
+
+knitr::include_graphics(figure_resource_supplement_file)
+
+```
+
+#### Variation in species’ consumption of its non-limiting resource
+
+Simulation parameters for variation in species’ consumption of its non-limiting resource, $q_{il}^{\prime}$, are shown below.
+
+```{r}
+#| label: tbl-parameters-nonlimiting
+#| tbl-cap: "Parameters for the non-limiting-resource-consumption simulations."
+
+display_parameter_table(parameter_table_nonlimiting)
+```
+
+Simulation results for variation in species’ consumption of its non-limiting resource are shown in Figure 4. NBE increases as $q_{il}^{\prime}$ decreases because $q_{ik}^{\prime}>q_{jk}^{\prime}$, and the ZNGI intersection arises from trade-offs in $q$.
+
+```{r}
+#| label: fig4
+#| fig-cap: "Effects of changing species i’s consumption of its non-limiting resource on niche differences, fitness differences, and biodiversity effects (Figure 4)."
+#| out-width: "100%"
+
+knitr::include_graphics(figure_nonlimiting_main_file)
+
+```
+
+Simulation results for variation in species’ consumption of its non-limiting resource are shown in Figure S4. Here, NBE decreases as $q_{il}^{\prime}$ decreases because $q_{ik}^{\prime}<q_{jk}^{\prime}$, and the ZNGI intersection arises from trade-offs in the half-saturation constant, $K$, rather than in the resource-consumption coefficients, $q$.
+
+```{r}
+#| label: figS4
+#| fig-cap: "Effects of changing species i’s consumption of its non-limiting resource on niche difference, fitness difference, and biodiversity effects (Figure S4)."
+#| out-width: "100%"
+
+
+knitr::include_graphics(figure_nonlimiting_supplement_file)
+
+```
+
+#### Variation in species’ consumption of its limiting resource
+
+Parameters for variation in species’ consumption of its limiting resource, $q_{ik}^{\prime}$, are shown below.
+
+```{r}
+#| label: tbl-parameters-limiting
+#| tbl-cap: "Parameters for the limiting-resource-consumption simulations."
+
+display_parameter_table(parameter_table_limiting)
+```
+
+Simulation results for variation in species’ consumption of its limiting resource are shown in Figure 5. ND increases, whereas CE decreases, as $q_{ik}^{\prime}$ increases.
+
+```{r}
+#| label: fig5
+#| fig-cap: "Effects of changing species i’s consumption of its limiting resource on niche differences, fitness differences, and biodiversity effects (Figure 5)."
+#| out-width: "100%"
+
+knitr::include_graphics(figure_limiting_main_file)
+```
+
+Simulation results for variation in species’ consumption of its limiting resource are shown in Figure S5. Under this parameter setting, both ND and CE increase as $q_{ik}^{\prime}$ increases, whereas NBE shows a complex nonlinear pattern.
+
+{{< pagebreak >}}
+
+```{r}
+#| label: figS5
+#| fig-cap: "Effects of changing species i’s consumption of its limiting resource on niche difference, fitness difference, and biodiversity effects (Figure S5)."
+#| out-width: "90%"
+#| fig-align: center
+
+knitr::include_graphics(figure_limiting_supplement_file)
+```
+
+## Reproducibility
+
+The report is generated by running:
+
+``` r
+source("setup.R")      # first use, or restore the recorded environment
+targets::tar_make()    # build only outdated steps
+```
+
+```{r}
+#| label: session-info
+#| code-fold: true
+
+sessionInfo()
+```
+
+The package versions used for this report are recorded in `renv.lock`.

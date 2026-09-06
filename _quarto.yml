@@ -1,0 +1,21 @@
+project:
+  type: default
+  output-dir: output/report
+  render:
+    - report.qmd
+
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-tools: true
+    embed-resources: true
+    theme: cosmo
+  docx:
+    toc: true
+
+execute:
+  echo: true
+  warning: false
+  message: false
+  freeze: false

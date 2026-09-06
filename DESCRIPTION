@@ -1,0 +1,24 @@
+Package: MCTBEF
+Type: Project
+Title: Coexistence and biodiversity effects under resource competition
+Version: 0.1.0
+Authors@R: person("Qi", "Yang", role = c("aut", "cre"), email = "yq200303@gmail.com")
+Description: A geometric approach to understand coexistence and biodiversity effects under resource competition.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Imports:
+    dplyr,
+    deSolve,
+    ggplot2,
+    knitr,
+    quarto,
+    readr,
+    tarchetypes,
+    targets,
+    tibble,
+    tidyr,
+    ggpubr,
+    cowplot,
+    ggnewscale,
+    ggrepel,
+    scales
